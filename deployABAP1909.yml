@@ -100,6 +100,7 @@
       -p 30213:30213 
       -p 50000:50000 
       -p 50001:50001 store/saplabs/abaptrial:1909
+      -agree-to-sap-license
     register: deploy_ABAP
 
   - name: Show output of 1909 deploy
