@@ -81,8 +81,30 @@
 
   - name: Show output of dockerLogin
     debug:
-      msg: "Container Output: {{docker_login_output}}"
+      msg: "Docker Login: {{docker_login_output}}"
 
+  - name: Configure kernel parameters
+    lineinfile:
+     dest: /etc/sysctl.conf
+     regexp: "^{{ item.property | regex_escape() }}="
+     line: "{{ item.property }}={{ item.value }}"
+    with_items:
+     - { property: 'vm.max_map_count', value: '2147483647' }
+     - { property: 'fs.aio-max-nr', value: '18446744073709551615' }
+     - { property: 'fs.file-max', value: '20000000' }
+
+  - name: Install Docker Compose
+    get_url:
+      url: https://github.com/docker/compose/releases/download/{{ DOCKER_COMPOSE_VERSION }}/docker-compose-Linux-x86_64
+      dest: "/usr/local/bin/docker-compose"
+      mode: 0755
+
+  - name: Install Ctop
+    get_url:
+      url: https://github.com/bcicen/ctop/releases/download/v{{ CTOP_VERSION }}/ctop-{{ CTOP_VERSION }}-linux-amd64
+      dest: "/usr/local/bin/ctop"
+      mode: 0755
+      
   - name: Deploy Developer Editon 1909
     shell: >
       docker run
@@ -106,15 +128,3 @@
   - name: Show output of 1909 deploy
     debug:
       msg: "Container Output: {{deploy_ABAP}}"
-
-  - name: Install Docker Compose
-    get_url:
-      url: https://github.com/docker/compose/releases/download/{{ DOCKER_COMPOSE_VERSION }}/docker-compose-Linux-x86_64
-      dest: "/usr/local/bin/docker-compose"
-      mode: 0755
-
-  - name: Install Ctop
-    get_url:
-      url: https://github.com/bcicen/ctop/releases/download/v{{ CTOP_VERSION }}/ctop-{{ CTOP_VERSION }}-linux-amd64
-      dest: "/usr/local/bin/ctop"
-      mode: 0755
