@@ -93,6 +93,14 @@
      - { property: 'fs.aio-max-nr', value: '18446744073709551615' }
      - { property: 'fs.file-max', value: '20000000' }
 
+  - name: Load kernel parameters
+    shell: sysctl -p
+    register: kernel_update
+
+  - name: Output kernel parameter load
+    debug:
+      msg: "sysctl load: {{kernel_update}}"
+
   - name: Install Docker Compose
     get_url:
       url: https://github.com/docker/compose/releases/download/{{ DOCKER_COMPOSE_VERSION }}/docker-compose-Linux-x86_64
@@ -104,7 +112,7 @@
       url: https://github.com/bcicen/ctop/releases/download/v{{ CTOP_VERSION }}/ctop-{{ CTOP_VERSION }}-linux-amd64
       dest: "/usr/local/bin/ctop"
       mode: 0755
-      
+
   - name: Deploy Developer Editon 1909
     shell: >
       docker run
