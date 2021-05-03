@@ -1,0 +1,126 @@
+---
+- name: Deploy ABAP 1909
+  hosts: 127.0.0.1
+  remote_user: root
+  become: 'yes'
+  become_method: sudo  
+  vars:
+    DOCKER_PACKAGES:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+
+  tasks:
+  - name: Update apt packages
+    apt:
+      update_cache: "yes"
+      force_apt_get: "yes"
+
+  - name: Run whoami without become.
+    command: whoami
+    changed_when: false
+    become: false
+    register: whoami
+
+  - name: Install packages needed for Docker
+    apt:
+      name: "{{ DOCKER_PACKAGES }}"
+      state: present
+      force_apt_get: "yes"
+
+  - name : Find distro
+    shell: "echo $(awk '/^ID=/' /etc/*-release | sed 's/ID=//' | tr '[:upper:]' '[:lower:]')"
+    register: dist
+
+  - name: Add Docker GPG apt Key
+    apt_key:
+      url: https://download.docker.com/linux/{{dist.stdout}}/gpg
+      state: present
+
+  - name: Save the current Ubuntu release version into a variable
+    shell: lsb_release -cs
+    register: dist_version
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: "deb [arch=amd64] https://download.docker.com/linux/{{dist.stdout}} {{ dist_version.stdout }} stable"
+      state: present
+
+  - name: Update apt packages
+    apt:
+      update_cache: "yes"
+      force_apt_get: "yes"
+
+  - name: Install Docker
+    apt:
+      name: "docker-ce"
+      state: present
+      force_apt_get: "yes"
+
+  - name: Test Docker with hello world example
+    shell: "docker run hello-world"
+    ignore_errors: yes
+    register: hello_world_output
+
+  - name: Show output of hello word example
+    debug:
+      msg: "Container Output: {{hello_world_output.stdout}}"
+
+  - name: Create docker group
+    group:
+      name: "docker"
+      state: present
+
+  - name: Adding user {{ whoami.stdout }} to docker group  
+    user:
+      name: "{{ whoami.stdout }}"
+      groups: "docker"
+      append: "yes"
+
+  - name: Log into Dockerhub
+    shell: "docker login -u {{ docker_user }} -p {{ docker_password }}"
+    register: docker_login_output
+
+  - name: Show output of dockerLogin
+    debug:
+      msg: "Docker Login: {{docker_login_output.stdout}}"
+
+  - name : Verify existing container
+    shell: "docker ps -aqf \"name=a4h\""
+    register: valid
+
+  - name: Output container IDs
+    debug:
+      msg: "Container IDs: {{valid}}"
+
+  - name: Deploy Developer Editon 1909
+    shell: >
+      docker run
+      --stop-timeout 3600
+      --sysctl kernel.shmmax=21474836480 
+      --sysctl kernel.shmmni=32768 
+      --sysctl kernel.shmall=5242880 
+      --sysctl kernel.msgmni=1024 
+      --sysctl kernel.sem="1250 256000 100 8192" 
+      --ulimit nofile=1048576:1048576
+      -di --name a4h -h vhcala4hci
+      -p 3200:3200 
+      -p 3300:3300 
+      -p 8443:8443 
+      -p 30213:30213 
+      -p 50000:50000 
+      -p 50001:50001 store/saplabs/abaptrial:1909
+      -agree-to-sap-license
+    register: deploy_ABAP
+    when: valid.stdout == ""
+
+  - name: Show output of 1909 deploy
+    debug:
+      msg: "Container Output: {{deploy_ABAP}}"
+    when: valid.stdout == ""
+
+  - name: Start existing container
+    shell: "docker start a4h"
+    when: valid.stdout != ""
