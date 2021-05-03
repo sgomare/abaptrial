@@ -1,11 +1,10 @@
 ---
-- name: Install Docker
+- name: Install ABAP 1909
   hosts: 127.0.0.1
+  remote_user: root
   become: 'yes'
   become_method: sudo  
   vars:
-    CTOP_VERSION: "0.7.5"
-    DOCKER_COMPOSE_VERSION: "1.27.4"
     DOCKER_PACKAGES:
       - apt-transport-https
       - ca-certificates
@@ -31,18 +30,22 @@
       state: present
       force_apt_get: "yes"
 
+  - name : Find distro
+    shell: "echo $(awk '/^ID=/' /etc/*-release | sed 's/ID=//' | tr '[:upper:]' '[:lower:]')"
+    register: dist
+
   - name: Add Docker GPG apt Key
     apt_key:
-      url: https://download.docker.com/linux/ubuntu/gpg
+      url: https://download.docker.com/linux/{{dist.stdout}}/gpg
       state: present
 
-  - name: Save the current Ubuntu release version into a variable
+  - name: Save the current distro release version into a variable
     shell: lsb_release -cs
-    register: ubuntu_version
+    register: dist_version
 
   - name: Add Docker Repository
     apt_repository:
-      repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ubuntu_version.stdout }} stable"
+      repo: "deb [arch=amd64] https://download.docker.com/linux/{{dist.stdout}} {{ dist_version.stdout }} stable"
       state: present
 
   - name: Update apt packages
@@ -81,7 +84,15 @@
 
   - name: Show output of dockerLogin
     debug:
-      msg: "Docker Login: {{docker_login_output}}"
+      msg: "Docker Login: {{docker_login_output.stdout}}"
+
+  - name : Verify existing container
+    shell: "docker ps -aqf \"name=a4h\""
+    register: valid
+
+  - name: Output container IDs
+    debug:
+      msg: "Container IDs: {{valid}}"
 
   - name: Configure kernel parameters
     lineinfile:
@@ -100,18 +111,6 @@
   - name: Output kernel parameter load
     debug:
       msg: "sysctl load: {{kernel_update}}"
-
-  - name: Install Docker Compose
-    get_url:
-      url: https://github.com/docker/compose/releases/download/{{ DOCKER_COMPOSE_VERSION }}/docker-compose-Linux-x86_64
-      dest: "/usr/local/bin/docker-compose"
-      mode: 0755
-
-  - name: Install Ctop
-    get_url:
-      url: https://github.com/bcicen/ctop/releases/download/v{{ CTOP_VERSION }}/ctop-{{ CTOP_VERSION }}-linux-amd64
-      dest: "/usr/local/bin/ctop"
-      mode: 0755
 
   - name: Deploy Developer Editon 1909
     shell: >
@@ -132,7 +131,13 @@
       -p 50001:50001 store/saplabs/abaptrial:1909
       -agree-to-sap-license
     register: deploy_ABAP
+    when: valid.stdout == ""
 
   - name: Show output of 1909 deploy
     debug:
       msg: "Container Output: {{deploy_ABAP}}"
+    when: valid.stdout == ""
+
+  - name: Start existing container
+    shell: "docker start a4h"
+    when: valid.stdout != ""          
