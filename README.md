@@ -7,7 +7,7 @@ Install ABAP Trial 1909 using Ansible.
 Examples of usage:
 <code>
 export HUBUSER="Docker Hub Username"
-Export HUBPASSWD="docker hub password" 
+export HUBPASSWD="docker hub password" 
 ansible-playbook deployABAP1909.yml --extra-vars "docker_user=$HUBUSER, docker_password=$HUBPASSWD" 
 </code>
 
@@ -18,14 +18,14 @@ Install ABAP Trial 2022 using Ansible.
 Examples of usage:
 <code>
 export HUBUSER="Docker Hub Username"
-Export HUBPASSWD="docker hub password"  
+export HUBPASSWD="docker hub password"  
 ansible-playbook deployABAP2022.yml --extra-vars "docker_user=$HUBUSER, docker_password=$HUBPASSWD" 
 </code>
 
 
 # abaptrial 2022 LXC Special Instructions
 1. The LXC container requires a further setting in the container configuration
-   <code> Features: keyctl=1,nesting=1</code>
+   <code> features: keyctl=1,nesting=1</code>
 3. The host Kernel requires the following parameters:
    <code>
    vm.max_map_count=2147483647
