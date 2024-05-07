@@ -5,9 +5,9 @@ These scripts require ansible; for Debian-based systems, use commonad apt instal
 Install ABAP Trial 1909 using Ansible.
 
 Examples of usage:
+<code>
 export HUBUSER="Docker Hub Username"
-Export HUBPASSWD="docker hub password"
-<code>  
+Export HUBPASSWD="docker hub password" 
 ansible-playbook deployABAP1909.yml --extra-vars "docker_user=$HUBUSER, docker_password=$HUBPASSWD" 
 </code>
 
@@ -16,9 +16,9 @@ ansible-playbook deployABAP1909.yml --extra-vars "docker_user=$HUBUSER, docker_p
 Install ABAP Trial 2022 using Ansible.
 
 Examples of usage:
+<code>
 export HUBUSER="Docker Hub Username"
-Export HUBPASSWD="docker hub password"
-<code>  
+Export HUBPASSWD="docker hub password"  
 ansible-playbook deployABAP2022.yml --extra-vars "docker_user=$HUBUSER, docker_password=$HUBPASSWD" 
 </code>
 
