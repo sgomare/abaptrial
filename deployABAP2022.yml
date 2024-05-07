@@ -116,11 +116,11 @@
     shell: >
       docker run
       --stop-timeout 3600
-      --sysctl kernel.shmmax=21474836480 
-      --sysctl kernel.shmmni=32768 
+      --sysctl kernel.shmmax=21474836480
+      --sysctl kernel.shmmni=32768
       --sysctl kernel.shmall=5242880 
       --sysctl kernel.msgmni=1024 
-      --sysctl kernel.sem="1250 256000 100 8192" 
+      --sysctl kernel.sem="1250 256000 100 8192"
       --ulimit nofile=1048576:1048576
       -di --name a4h -h vhcala4hci
       -p 3200:3200 
